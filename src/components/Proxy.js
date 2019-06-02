@@ -14,7 +14,7 @@ import direct from 's/direct.svg';
 import http from 's/http.svg';
 import group from 's/group.svg';
 
-import s0 from './Proxy.module.scss';
+import s0 from './Proxy.module.css';
 
 import { getDelay, getProxies } from 'd/proxies';
 
@@ -57,10 +57,10 @@ function Proxy({ now, name }) {
 
   return (
     <div className={s0.proxy}>
-      <div className={s0.left} style={{ color }}>
-        <Icon id={iconId} width={80} height={80} />
+      <div className={s0.iconWrapper} style={{ color }}>
+        <Icon id={iconId} width={70} height={70} />
       </div>
-      <div className={s0.right}>
+      <div className={s0.proxyDetail}>
         <div className={s0.proxyName}>{name}</div>
         {latency ? <ProxyLatency latency={latency} /> : null}
       </div>

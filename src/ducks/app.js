@@ -1,16 +1,15 @@
-import { loadState, saveState } from 'm/storage';
+import { loadState, saveState, clearState } from 'm/storage';
 import { fetchConfigs } from 'd/configs';
 import { closeModal } from 'd/modals';
 
 const UpdateClashAPIConfig = 'app/UpdateClashAPIConfig';
 const SwitchTheme = 'app/SwitchTheme';
-
-const StorageKey = 'yacd.haishan.me';
+const SELECT_CHART_STYLE_INDEX = 'app/SELECT_CHART_STYLE_INDEX';
 
 export const getClashAPIConfig = s => s.app.clashAPIConfig;
 export const getTheme = s => s.app.theme;
+export const getSelectedChartStyleIndex = s => s.app.selectedChartStyleIndex;
 
-// TODO to support secret
 export function updateClashAPIConfig({ hostname: iHostname, port, secret }) {
   return async (dispatch, getState) => {
     const hostname = iHostname.trim().replace(/^http(s):\/\//, '');
@@ -20,7 +19,7 @@ export function updateClashAPIConfig({ hostname: iHostname, port, secret }) {
     });
 
     // side effect
-    saveState(StorageKey, getState().app);
+    saveState(getState().app);
 
     dispatch(closeModal('apiConfig'));
     dispatch(fetchConfigs());
@@ -46,7 +45,29 @@ export function switchTheme() {
     setTheme(theme);
     dispatch({ type: SwitchTheme, payload: { theme } });
     // side effect
-    saveState(StorageKey, getState().app);
+    saveState(getState().app);
+  };
+}
+
+export function clearStorage() {
+  clearState();
+  try {
+    location.reload();
+  } catch (err) {
+    // ignore
+  }
+}
+
+export function selectChartStyleIndex(selectedChartStyleIndex) {
+  return (dispatch, getState) => {
+    dispatch({
+      type: SELECT_CHART_STYLE_INDEX,
+      payload: {
+        selectedChartStyleIndex
+      }
+    });
+    // side effect
+    saveState(getState().app);
   };
 }
 
@@ -57,6 +78,7 @@ const defaultState = {
     port: '7892',
     secret: ''
   },
+  selectedChartStyleIndex: 0,
   theme: 'dark'
 };
 
@@ -73,8 +95,8 @@ function parseConfigQueryString() {
 }
 
 function getInitialState() {
-  let s = loadState(StorageKey);
-  if (!s) s = defaultState;
+  let s = loadState();
+  s = { ...defaultState, ...s };
   // TODO flat clashAPIConfig?
 
   const configQuery = parseConfigQueryString();
@@ -96,6 +118,10 @@ export default function reducer(state = getInitialState(), { type, payload }) {
     }
 
     case SwitchTheme: {
+      return { ...state, ...payload };
+    }
+
+    case SELECT_CHART_STYLE_INDEX: {
       return { ...state, ...payload };
     }
 

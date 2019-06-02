@@ -13,18 +13,27 @@
   justify-content: center;
   padding: 25px 0 15px;
   @media (max-width: 768px) {
-    padding: 0;
+    display: none;
   }
   color: #2a477a;
   transition: color 0.3s ease-in-out;
 
   &:hover {
-    color: #1f52ac;
+    animation: pulse 0.3s ease-in-out 0s infinite alternate;
   }
 
   img {
     width: 80px;
     height: 80px;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    color: #2a477a;
+  }
+  100% {
+    color: #1f52ac;
   }
 }
 
@@ -36,7 +45,7 @@
   }
 }
 
-// a router link
+/* a router link */
 .row {
   color: var(--color-text);
   text-decoration: none;
@@ -47,7 +56,6 @@
 
   @media (max-width: 768px) {
     flex-direction: column;
-    // display: flex;
   }
 
   svg {
@@ -73,7 +81,7 @@
 }
 
 .themeSwitchContainer {
-  $sz: 50px;
+  --sz: 50px;
 
   @media (max-width: 768px) {
     display: none;
@@ -83,8 +91,8 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: $sz;
-  height: $sz;
+  width: var(--sz);
+  height: var(--sz);
   padding: 20px 0;
   display: flex;
   justify-content: center;

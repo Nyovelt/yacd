@@ -3,12 +3,23 @@ import PropTypes from 'prop-types';
 import { useStoreState, useActions } from 'm/store';
 
 import { getConfigs, fetchConfigs, updateConfigs } from 'd/configs';
+import {
+  clearStorage,
+  selectChartStyleIndex,
+  getSelectedChartStyleIndex
+} from 'd/app';
 
 import ContentHeader from 'c/ContentHeader';
 import Switch from 'c/Switch';
 import ToggleSwitch from 'c/ToggleSwitch';
 import Input from 'c/Input';
-import s0 from 'c/Config.module.scss';
+import Button from 'c/Button';
+import Selection from 'c/Selection';
+import TrafficChartSample from 'c/TrafficChartSample';
+
+import s0 from 'c/Config.module.css';
+
+const propsList = [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }];
 
 const optionsRule = [
   {
@@ -49,23 +60,31 @@ const optionsLogLevel = [
 ];
 
 const actions = {
+  selectChartStyleIndex,
   fetchConfigs,
   updateConfigs
 };
 
-const mapStateToProps = s => ({ configs: getConfigs(s) });
+const mapStateToProps = s => ({
+  configs: getConfigs(s)
+});
 
 export default function ConfigContainer() {
   const { fetchConfigs } = useActions(actions);
   const { configs } = useStoreState(mapStateToProps);
   useEffect(() => {
     fetchConfigs();
-  }, []);
+  }, [fetchConfigs]);
   return <Config configs={configs} />;
 }
 
+const mapStateToProps2 = s => ({
+  selectedChartStyleIndex: getSelectedChartStyleIndex(s)
+});
+
 function Config({ configs }) {
-  const { updateConfigs } = useActions(actions);
+  const { updateConfigs, selectChartStyleIndex } = useActions(actions);
+  const { selectedChartStyleIndex } = useStoreState(mapStateToProps2);
   // configState to track component internal state
   // prevConfigs to track external props.configs
   const [configState, _setConfigState] = useState(configs);
@@ -125,6 +144,10 @@ function Config({ configs }) {
         break;
       }
     }
+  }
+
+  function handleChartStyleIndexOnChange(idx) {
+    selectChartStyleIndex(idx);
   }
 
   return (
@@ -188,6 +211,26 @@ function Config({ configs }) {
             value={configState['log-level']}
             onChange={handleInputOnChange}
           />
+        </div>
+      </div>
+
+      <div className={s0.sep}>
+        <div />
+      </div>
+
+      <div className={s0.section}>
+        <div>
+          <div className={s0.label}>Chart Style</div>
+          <Selection
+            OptionComponent={TrafficChartSample}
+            optionPropsList={propsList}
+            selectedIndex={selectedChartStyleIndex}
+            onChange={handleChartStyleIndexOnChange}
+          />
+        </div>
+        <div>
+          <div className={s0.label}>Action</div>
+          <Button label="Log out" onClick={clearStorage} />
         </div>
       </div>
     </div>

@@ -2,10 +2,12 @@
 
 const path = require('path');
 const webpack = require('webpack');
-const { rules, plugins } = require('./webpack.common');
 const TerserPlugin = require('terser-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const CleanPlugin = require('clean-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
+process.env.BABEL_ENV = process.env.NODE_ENV;
 const isDev = process.env.NODE_ENV !== 'production';
 
 const resolveDir = dir => path.resolve(__dirname, dir);
@@ -25,8 +27,7 @@ const svgSpriteRule = {
 // ---- entry
 
 const entry = {
-  // app: ['whatwg-fetch', '@babel/polyfill', './src/app.js']
-  app: ['whatwg-fetch', './src/app.js']
+  app: ['react-hot-loader/patch', './src/app.js']
 };
 
 // ---- output
@@ -58,25 +59,10 @@ const mode = isDev ? 'development' : 'production';
 
 const definePlugin = new webpack.DefinePlugin({
   __DEV__: JSON.stringify(isDev),
-  'process.env': {
-    NODE_ENV: JSON.stringify(process.env.NODE_ENV)
-  }
+  'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
 });
 
-plugins.push(html);
-plugins.push(definePlugin);
-plugins.push(new CopyPlugin([{ from: 'assets/*', flatten: true }]));
-
-if (!isDev) {
-  plugins.push(
-    new CleanPlugin(['**/*'], {
-      root: path.join(__dirname, 'public'),
-      verbose: false,
-      beforeEmit: true
-    })
-  );
-}
-
+// https://webpack.js.org/configuration/devtool/
 let devtool;
 if (isDev) {
   devtool = 'eval-source-map';
@@ -85,6 +71,81 @@ if (isDev) {
   devtool = false;
 }
 
+const loaders = {
+  style: {
+    loader: 'style-loader',
+    options: {
+      // workaround css modules HMR issue
+      // see https://github.com/webpack-contrib/style-loader/issues/320
+      hmr: false
+    }
+  },
+  css: { loader: 'css-loader' },
+  cssModule: {
+    loader: 'css-loader',
+    options: {
+      modules: true,
+      localIdentName: isDev
+        ? '[path]_[name]_[local]_[hash:base64:5]'
+        : '[hash:base64:10]'
+    }
+  },
+  postcss: {
+    loader: 'postcss-loader',
+    options: {
+      plugins: () =>
+        [
+          require('postcss-import')(),
+          require('postcss-nested')(),
+          require('autoprefixer')(),
+          require('postcss-extend-rule')(),
+          isDev ? false : require('cssnano')()
+        ].filter(Boolean)
+    }
+  }
+};
+
+const rulesCss = {
+  test: /\.css$/,
+  exclude: /\.module\.css$/,
+  use: [
+    isDev ? loaders.style : MiniCssExtractPlugin.loader,
+    loaders.css,
+    loaders.postcss
+  ].filter(Boolean)
+};
+
+const rulesCssModules = {
+  test: /\.module\.css$/,
+  use: [
+    isDev ? loaders.style : MiniCssExtractPlugin.loader,
+    loaders.cssModule,
+    loaders.postcss
+  ].filter(Boolean)
+};
+
+const cssExtractPlugin = new MiniCssExtractPlugin({
+  filename: isDev ? '[name].bundle.css' : '[name].[chunkhash].css'
+});
+
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const bundleAnalyzerPlugin = new BundleAnalyzerPlugin({
+  analyzerMode: 'static',
+  reportFilename: 'report.html',
+  openAnalyzer: false
+});
+
+const plugins = [
+  // in webpack 4 namedModules will be enabled by default
+  html,
+  definePlugin,
+  new CopyPlugin([{ from: 'assets/*', flatten: true }]),
+  new CleanPlugin(),
+  isDev ? false : new webpack.HashedModuleIdsPlugin(),
+  isDev ? false : cssExtractPlugin,
+  isDev ? false : bundleAnalyzerPlugin
+].filter(Boolean);
+
 module.exports = {
   devtool,
   entry,
@@ -92,6 +153,7 @@ module.exports = {
   mode,
   resolve: {
     alias: {
+      'react-dom': '@hot-loader/react-dom',
       a: resolveDir('src/api'),
       s: resolveDir('src/svg'),
       m: resolveDir('src/misc'),
@@ -102,12 +164,26 @@ module.exports = {
   module: {
     rules: [
       svgSpriteRule,
-      rules.js,
-      rules.file,
-      rules.css,
-      rules.cssModules,
-      rules.sass,
-      rules.sassCssModules
+      // js loader
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: ['babel-loader']
+      },
+      // file loader
+      {
+        test: /\.(ttf|eot|woff|woff2)(\?.+)?$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]'
+            }
+          }
+        ]
+      },
+      rulesCss,
+      rulesCssModules
     ]
   },
   optimization: {

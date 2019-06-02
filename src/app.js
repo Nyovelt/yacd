@@ -1,3 +1,5 @@
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
 import 'modern-normalize/modern-normalize.css';
 
 import React from 'react';
@@ -5,10 +7,14 @@ import ReactDOM from 'react-dom';
 import Modal from 'react-modal';
 import Root from './components/Root';
 
-Modal.setAppElement('#app');
+const rootEl = document.getElementById('app');
+
+Modal.setAppElement(rootEl);
+
+const { unstable_createRoot: createRoot } = ReactDOM;
 
 // use async React
-const root = ReactDOM.createRoot(document.getElementById('app'));
+const root = createRoot(rootEl);
 root.render(<Root />);
 
 // const render = (Component, props = {}) => {

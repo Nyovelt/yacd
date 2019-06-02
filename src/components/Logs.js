@@ -4,7 +4,7 @@ import cx from 'classnames';
 import { useStoreState, useActions } from 'm/store';
 import { getClashAPIConfig } from 'd/app';
 
-import Icon from 'c/Icon';
+import SvgYacd from './SvgYacd';
 import { FixedSizeList as List, areEqual } from 'react-window';
 import ContentHeader from 'c/ContentHeader';
 import useRemainingViewPortHeight from '../hooks/useRemainingViewPortHeight';
@@ -12,10 +12,9 @@ import useRemainingViewPortHeight from '../hooks/useRemainingViewPortHeight';
 import { fetchLogs } from '../api/logs';
 import LogSearch from './LogSearch';
 import { getLogsForDisplay, appendLog } from 'd/logs';
+import { getLogLevel } from 'd/configs';
 
-import yacd from 's/yacd.svg';
-
-import s0 from 'c/Logs.module.scss';
+import s0 from 'c/Logs.module.css';
 const paddingBottom = 30;
 const colors = {
   debug: 'none',
@@ -68,13 +67,11 @@ export default function Logs() {
   const { hostname, port, secret } = useStoreState(getClashAPIConfig);
   const { appendLog } = useActions(actions);
   const logs = useStoreState(getLogsForDisplay);
+  const logLevel = useStoreState(getLogLevel);
 
-  useEffect(
-    () => {
-      fetchLogs({ hostname, port, secret }, appendLog);
-    },
-    [hostname, port, secret]
-  );
+  useEffect(() => {
+    fetchLogs({ hostname, port, secret, logLevel }, appendLog);
+  }, [hostname, port, secret, logLevel, appendLog]);
   const [refLogsContainer, containerHeight] = useRemainingViewPortHeight();
 
   return (
@@ -88,9 +85,9 @@ export default function Logs() {
             style={{ height: containerHeight - paddingBottom }}
           >
             <div className={s0.logPlaceholderIcon}>
-              <Icon id={yacd.id} width={200} height={200} />
+              <SvgYacd width={200} height={200} />
             </div>
-            <div>No logs yet, hang tight...</div>
+            <div>No logs yet, hold tight...</div>
           </div>
         ) : (
           <div className={s0.logsWrapper}>
